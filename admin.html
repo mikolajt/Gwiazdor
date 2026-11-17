@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gwiazdor — panel organizatora</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2ec;
+    --card: #ffffff;
+    --text: #1f2933;
+    --muted: #66707a;
+    --line: #e4ded3;
+    --red: #c8323f;
+    --red-dark: #a3262f;
+    --green: #2f7a4a;
+    --gold: #b7861f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: Nunito, system-ui, sans-serif; font-size: 16px; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 26px; margin: 8px 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 24px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 18px; }
+  h2 { font-size: 19px; margin: 0 0 12px; }
+  label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+  input[type=text], input[type=url], textarea {
+    width: 100%; font: inherit; color: inherit; background: #fff;
+    border: 1px solid #cfc7b8; border-radius: 9px; padding: 9px 11px;
+  }
+  textarea { resize: vertical; min-height: 64px; }
+  input:focus, textarea:focus { outline: 2px solid var(--red); outline-offset: 1px; border-color: transparent; }
+  button { font: inherit; font-weight: 700; border-radius: 9px; padding: 8px 14px; cursor: pointer; border: 1px solid #cfc7b8; background: #fff; color: var(--text); }
+  button:hover { background: #f3efe7; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--red); border-color: var(--red); color: #fff; font-size: 18px; padding: 10px 22px; }
+  button.primary:hover:not(:disabled) { background: var(--red-dark); }
+  button.small { font-size: 14px; padding: 5px 10px; }
+  button.danger { color: var(--red-dark); }
+
+  .person { border: 1px solid var(--line); border-radius: 11px; padding: 12px; margin-bottom: 10px; background: #fcfbf8; }
+  .person-head { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
+  .person-head .field { flex: 1; margin: 0; }
+  .num { font-weight: 800; color: var(--muted); width: 22px; padding-bottom: 10px; }
+  .errors { margin: 10px 0 0; padding: 10px 12px 10px 30px; border-radius: 9px; background: #fdecec; color: var(--red-dark); font-weight: 700; font-size: 14px; }
+  .errors:empty { display: none; }
+  .empty { color: var(--muted); margin: 0 0 10px; }
+
+  .notice { padding: 10px 12px; border-radius: 9px; background: #fff5dc; color: #6b4e00; font-weight: 700; margin-bottom: 12px; }
+  .pair { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .pair:first-child { border-top: 0; }
+  .pair .who { flex: 1 1 200px; font-weight: 700; overflow-wrap: anywhere; }
+  .pair .arrow { color: var(--muted); margin: 0 4px; }
+  .badge { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+  .badge.changed { background: #fff0c2; color: #6b4e00; }
+  .badge.copied { background: #e2f3e8; color: var(--green); }
+  .manual { flex-basis: 100%; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  footer { display: flex; flex-wrap: wrap; gap: 8px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎁 Gwiazdor — panel organizatora</h1>
+  <p class="lead">Wpisz osoby, wylosuj pary i wyślij każdemu jego prywatny link.</p>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <section aria-labelledby="h-settings">
+    <h2 id="h-settings">Ustawienia</h2>
+    <div class="field">
+      <label for="budget">Budżet</label>
+      <input type="text" id="budget" placeholder="np. 100 zł" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="baseUrl">Adres strony</label>
+      <input type="url" id="baseUrl" placeholder="https://twoja-nazwa.github.io/SecretSanta/" autocomplete="off" spellcheck="false">
+      <p class="hint">Tu będą prowadzić linki dla uczestników.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-people">
+    <h2 id="h-people">Uczestnicy</h2>
+    <p class="empty" id="peopleEmpty">Nikogo jeszcze nie ma. Dodaj pierwszą osobę.</p>
+    <div id="people"></div>
+    <button type="button" id="addPerson">+ Dodaj osobę</button>
+    <ul class="errors" id="errors" aria-live="polite"></ul>
+  </section>
+
+  <section aria-labelledby="h-draw">
+    <h2 id="h-draw">Losowanie</h2>
+    <div id="draw"></div>
+  </section>
+
+  <footer>
+    <button type="button" id="export">Eksportuj</button>
+    <button type="button" id="import">Importuj</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+    <button type="button" class="danger" id="clearAll">Wyczyść wszystko</button>
+  </footer>
+</main>
+
+<template id="personTpl">
+  <div class="person">
+    <div class="person-head">
+      <span class="num"></span>
+      <div class="field">
+        <label>Imię</label>
+        <input type="text" class="name" autocomplete="off">
+      </div>
+      <button type="button" class="small danger remove">Usuń</button>
+    </div>
+    <div class="field">
+      <label>Lista życzeń (opcjonalnie)</label>
+      <textarea class="prefs" rows="2" placeholder="np. książki, gry planszowe, coś do kawy"></textarea>
+    </div>
+  </div>
+</template>
+
+<script src="common.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
