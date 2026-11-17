@@ -49,5 +49,64 @@
     }
   };
 
+  // ---- participants and the draw -------------------------------------------
+
+  SS.normalizeName = function (name) {
+    return String(name == null ? '' : name).trim().replace(/\s+/g, ' ');
+  };
+
+  function nameKey(name) {
+    return SS.normalizeName(name).toLocaleLowerCase('pl');
+  }
+
+  SS.validateParticipants = function (names) {
+    const errors = [];
+    const clean = names.map(SS.normalizeName);
+    if (clean.length < 3) errors.push('Potrzeba co najmniej 3 osób.');
+    if (clean.some(n => !n)) errors.push('Każda osoba musi mieć imię.');
+    const seen = new Map();
+    const reported = new Set();
+    clean.forEach(n => {
+      if (!n) return;
+      const k = nameKey(n);
+      if (seen.has(k) && !reported.has(k)) {
+        errors.push('Imię „' + seen.get(k) + '” występuje więcej niż raz.');
+        reported.add(k);
+      } else if (!seen.has(k)) {
+        seen.set(k, n);
+      }
+    });
+    return errors;
+  };
+
+  function cryptoRandom() {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return buf[0] / 4294967296;
+  }
+
+  function shuffle(arr, random) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  // Random derangement: giver -> recipient, nobody draws themselves.
+  SS.draw = function (names, random) {
+    const errors = SS.validateParticipants(names);
+    if (errors.length) throw new Error(errors.join(' '));
+    random = random || cryptoRandom;
+    const givers = names.map(SS.normalizeName);
+    let recipients;
+    do {
+      recipients = shuffle(givers.slice(), random);
+    } while (recipients.some((n, i) => n === givers[i]));
+    const result = {};
+    givers.forEach((g, i) => { result[g] = recipients[i]; });
+    return result;
+  };
+
   window.SS = SS;
 })();

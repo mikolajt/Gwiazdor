@@ -52,6 +52,34 @@ test('decode rejects wrong version and missing names', () => {
   eq(SS.decodePayload(rawEncode({ v: 1, g: 'A' })), null);
 });
 
+// --- Task 2: validation and draw ------------------------------------------
+test('validate ok', () => eq(SS.validateParticipants(['Anna', 'Tomek', 'Ola']), []));
+test('validate too few', () => ok(SS.validateParticipants(['A', 'B']).includes('Potrzeba co najmniej 3 osób.')));
+test('validate empty name', () => ok(SS.validateParticipants(['A', ' ', 'C']).includes('Każda osoba musi mieć imię.')));
+test('validate flags case/space duplicates', () =>
+  eq(SS.validateParticipants(['Anna', ' anna ', 'Ola']), ['Imię „Anna” występuje więcej niż raz.']));
+test('draw: nobody draws themselves, is a permutation (1000 runs)', () => {
+  for (let i = 0; i < 1000; i++) {
+    const names = ['A', 'B', 'C', 'D', 'E'].slice(0, 3 + (i % 3));
+    const m = SS.draw(names);
+    eq(Object.keys(m).sort(), [...names].sort());
+    eq(Object.values(m).sort(), [...names].sort());
+    names.forEach(n => ok(m[n] !== n));
+  }
+});
+test('draw uses normalized names', () => {
+  const m = SS.draw(['  Anna ', 'Tomek', 'Ola']);
+  ok('Anna' in m && !('  Anna ' in m));
+});
+test('draw throws on invalid input', () => {
+  let threw = false; try { SS.draw(['A', 'B']); } catch (e) { threw = true; } ok(threw);
+});
+test('draw varies', () => {
+  const seen = new Set();
+  for (let i = 0; i < 200; i++) seen.add(JSON.stringify(SS.draw(['A', 'B', 'C', 'D'])));
+  ok(seen.size > 3);
+});
+
 // --- runner ---------------------------------------------------------------
 (function run() {
   const list = document.getElementById('results');
