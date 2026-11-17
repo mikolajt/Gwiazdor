@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gwiazdor 🎁 — Twoje losowanie</title>
+<meta property="og:title" content="Gwiazdor 🎁 — Twoje losowanie">
+<meta property="og:description" content="Otwórz, żeby zobaczyć, komu robisz prezent.">
+<meta name="description" content="Otwórz, żeby zobaczyć, komu robisz prezent.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0d1b2e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-1: #1e3a5f;
+    --bg-2: #0d1b2e;
+    --text: #eef3fa;
+    --gold: #f4c95d;
+    --panel: rgba(255, 255, 255, .08);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg-2); }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: radial-gradient(circle at 50% 25%, var(--bg-1), var(--bg-2) 70%) fixed;
+    color: var(--text);
+    font-family: Nunito, system-ui, sans-serif;
+    text-align: center;
+    overflow-x: hidden;
+  }
+  main {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: max(40px, env(safe-area-inset-top)) 20px 48px;
+  }
+  .hello { font-size: 26px; font-weight: 800; margin: 0; overflow-wrap: anywhere; }
+  .hint { opacity: .75; font-size: 16px; margin: 6px 0 0; transition: opacity .3s; }
+  .open .hint { opacity: 0; }
+
+  .stage { position: relative; }
+  .gift-btn {
+    display: block;
+    margin: 36px auto 0;
+    width: 210px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    border-radius: 16px;
+    -webkit-tap-highlight-color: transparent;
+    transition: width .5s ease, margin .5s ease;
+  }
+  .gift-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 6px; }
+  .gift-btn svg { display: block; width: 100%; height: auto; animation: wiggle 2.4s ease-in-out infinite; }
+  .gift-btn:hover svg { animation-duration: 1.2s; }
+  @keyframes wiggle {
+    0%, 78%, 100% { transform: rotate(0); }
+    83% { transform: rotate(-6deg); }
+    88% { transform: rotate(6deg); }
+    93% { transform: rotate(-3deg); }
+  }
+  .lid { transition: transform .6s cubic-bezier(.5, -0.4, .5, 1.4), opacity .6s; transform-origin: 20% 100%; transform-box: fill-box; }
+  .open .lid { transform: translate(-40px, -110px) rotate(-35deg); opacity: 0; }
+  .open .gift-btn { width: 110px; margin-top: 18px; cursor: default; }
+  .open .gift-btn svg { animation: none; }
+
+  .confetti { position: absolute; left: 50%; top: 60%; width: 8px; height: 12px; border-radius: 2px; opacity: 0; pointer-events: none; }
+  .open .confetti { animation: pop 1.3s ease-out forwards; }
+  @keyframes pop {
+    0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+    100% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(var(--rot)); }
+  }
+
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s .35s, transform .6s .35s; visibility: hidden; }
+  .open .reveal { opacity: 1; transform: none; visibility: visible; }
+  .label { margin: 18px 0 0; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; color: var(--gold); font-weight: 800; }
+  .name { font-size: clamp(34px, 11vw, 46px); font-weight: 800; margin: 2px 0 18px; color: #fff; line-height: 1.1; overflow-wrap: anywhere; }
+  .card { background: var(--panel); border-radius: 16px; padding: 16px 18px; text-align: left; font-size: 17px; line-height: 1.5; }
+  .card h2 { margin: 0 0 4px; font-size: 15px; font-weight: 800; color: var(--gold); }
+  .card p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+  .budget { margin: 16px 0 0; font-size: 18px; font-weight: 800; color: var(--gold); overflow-wrap: anywhere; }
+
+  .error { margin-top: 30vh; font-size: 20px; font-weight: 700; line-height: 1.4; }
+  .error span { display: block; font-size: 48px; margin-bottom: 10px; }
+  [hidden] { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gift-btn svg { animation: none; }
+    .open .confetti { animation: none; }
+    .lid, .reveal, .gift-btn { transition-duration: .01s; transition-delay: 0s; }
+  }
+</style>
+</head>
+<body>
+<main id="app">
+  <div id="present" hidden>
+    <p class="hello" id="hello"></p>
+    <p class="hint">Twoja osoba jest w środku… Stuknij prezent!</p>
+
+    <div class="stage">
+      <button class="gift-btn" id="gift" type="button" aria-label="Otwórz prezent">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <rect x="25" y="85" width="150" height="105" rx="6" fill="#c8323f"/>
+          <rect x="90" y="85" width="20" height="105" fill="#f4c95d"/>
+          <g class="lid">
+            <rect x="15" y="60" width="170" height="30" rx="6" fill="#e04452"/>
+            <rect x="90" y="60" width="20" height="30" fill="#f4c95d"/>
+            <path d="M100 60 C 70 20, 45 45, 100 60 C 155 45, 130 20, 100 60" fill="none" stroke="#f4c95d" stroke-width="9"/>
+          </g>
+        </svg>
+      </button>
+      <div id="confetti" aria-hidden="true"></div>
+    </div>
+
+    <div class="reveal" id="reveal" aria-live="polite">
+      <p class="label">Twoja osoba to:</p>
+      <p class="name" id="name"></p>
+      <section class="card" id="wishes">
+        <h2>Lista życzeń:</h2>
+        <p id="prefs"></p>
+      </section>
+      <p class="budget" id="budget"></p>
+    </div>
+  </div>
+
+  <div class="error" id="error" hidden>
+    <span aria-hidden="true">🎁❓</span>
+    Ten link nie działa. Poproś organizatora o nowy.
+  </div>
+</main>
+
+<script src="common.js"></script>
+<script>
+  // Opening another link in the same tab only changes the hash: start over.
+  window.addEventListener('hashchange', function () { location.reload(); });
+
+  (function () {
+    var data = SS.decodePayload(location.hash.slice(1));
+    if (!data) {
+      document.getElementById('error').hidden = false;
+      return;
+    }
+
+    document.getElementById('hello').textContent = 'Cześć, ' + data.g + '! 🎄';
+    document.getElementById('name').textContent = data.r;
+    if (data.p.trim()) {
+      document.getElementById('prefs').textContent = data.p.trim();
+    } else {
+      document.getElementById('wishes').hidden = true;
+    }
+    if (data.b.trim()) {
+      document.getElementById('budget').textContent = 'Budżet: ' + data.b.trim();
+    } else {
+      document.getElementById('budget').hidden = true;
+    }
+    document.getElementById('present').hidden = false;
+
+    var colors = ['#f4c95d', '#e04452', '#6fcf97', '#ffffff', '#56ccf2'];
+    var box = document.getElementById('confetti');
+    for (var i = 0; i < 48; i++) {
+      var c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.background = colors[i % colors.length];
+      c.style.setProperty('--x', (Math.random() * 340 - 170) + 'px');
+      c.style.setProperty('--y', (Math.random() * -280 - 40) + 'px');
+      c.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+      c.style.animationDelay = (0.15 + Math.random() * 0.25) + 's';
+      box.appendChild(c);
+    }
+
+    var gift = document.getElementById('gift');
+    gift.addEventListener('click', function () {
+      var app = document.getElementById('app');
+      if (app.classList.contains('open')) return;
+      app.classList.add('open');
+      gift.setAttribute('aria-label', 'Prezent otwarty');
+      gift.setAttribute('tabindex', '-1');
+    });
+  })();
+</script>
+</body>
+</html>
