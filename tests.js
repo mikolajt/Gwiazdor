@@ -80,6 +80,40 @@ test('draw varies', () => {
   ok(seen.size > 3);
 });
 
+// --- Task 3: links and admin state ----------------------------------------
+test('buildLink strips query and hash', () =>
+  eq(SS.buildLink('https://u.github.io/repo/?fbclid=1#old', 'XYZ'), 'https://u.github.io/repo/#XYZ'));
+test('defaultBaseUrl https', () =>
+  eq(SS.defaultBaseUrl('https://u.github.io/repo/admin.html?x=1#y'), 'https://u.github.io/repo/'));
+test('defaultBaseUrl file', () => eq(SS.defaultBaseUrl('file:///D:/Repos/SecretSanta/admin.html'), ''));
+test('parseState garbage → default', () => {
+  eq(SS.parseState(null), SS.defaultState());
+  eq(SS.parseState('{oops'), SS.defaultState());
+  eq(SS.parseState('[1,2]'), SS.defaultState());
+});
+test('parseState fills missing fields', () =>
+  eq(SS.parseState('{"budget":"50 zł"}'), Object.assign(SS.defaultState(), { budget: '50 zł' })));
+const st = () => Object.assign(SS.defaultState(), {
+  budget: ' 100 zł ', baseUrl: 'https://x/',
+  people: [{ id: '1', name: 'Anna', prefs: ' kawa ' }, { id: '2', name: 'Tomek', prefs: '' }, { id: '3', name: 'Ola', prefs: 'gry' }],
+  draw: { Anna: 'Tomek', Tomek: 'Ola', Ola: 'Anna' },
+});
+test('drawMatches true', () => ok(SS.drawMatches(st())));
+test('drawMatches false after add/remove/rename', () => {
+  const a = st(); a.people.push({ id: '4', name: 'Ewa', prefs: '' }); ok(!SS.drawMatches(a), 'add');
+  const b = st(); b.people.pop(); ok(!SS.drawMatches(b), 'remove');
+  const c = st(); c.people[0].name = 'Ania'; ok(!SS.drawMatches(c), 'rename');
+  const d = st(); d.draw = null; ok(!SS.drawMatches(d), 'no draw');
+});
+test('drawMatches ignores prefs/budget edits and whitespace', () => {
+  const s = st(); s.people[0].prefs = 'nowe'; s.budget = '200 zł'; s.people[1].name = ' Tomek '; ok(SS.drawMatches(s));
+});
+test('linkFor carries recipient prefs and trimmed budget', () => {
+  const link = SS.linkFor(st(), 'Ola');
+  ok(link.startsWith('https://x/#'));
+  eq(SS.decodePayload(link.split('#')[1]), { g: 'Ola', r: 'Anna', p: 'kawa', b: '100 zł' });
+});
+
 // --- runner ---------------------------------------------------------------
 (function run() {
   const list = document.getElementById('results');

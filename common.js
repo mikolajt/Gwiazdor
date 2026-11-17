@@ -108,5 +108,72 @@
     return result;
   };
 
+  // ---- links and admin state -----------------------------------------------
+
+  SS.buildLink = function (baseUrl, encoded) {
+    return String(baseUrl).split('#')[0].split('?')[0] + '#' + encoded;
+  };
+
+  SS.defaultBaseUrl = function (href) {
+    let url;
+    try { url = new URL(href); } catch (e) { return ''; }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+    return url.origin + url.pathname.replace(/[^/]*$/, '');
+  };
+
+  SS.defaultState = function () {
+    return { budget: '', baseUrl: '', people: [], draw: null, copied: {} };
+  };
+
+  function isPlainObject(x) {
+    return !!x && typeof x === 'object' && !Array.isArray(x);
+  }
+
+  function stringMap(x) {
+    if (!isPlainObject(x)) return null;
+    const out = {};
+    for (const k of Object.keys(x)) {
+      if (typeof x[k] !== 'string') return null;
+      out[k] = x[k];
+    }
+    return out;
+  }
+
+  SS.parseState = function (json) {
+    const state = SS.defaultState();
+    let raw;
+    try { raw = JSON.parse(json); } catch (e) { return state; }
+    if (!isPlainObject(raw)) return state;
+    if (typeof raw.budget === 'string') state.budget = raw.budget;
+    if (typeof raw.baseUrl === 'string') state.baseUrl = raw.baseUrl;
+    if (Array.isArray(raw.people)) {
+      state.people = raw.people
+        .filter(isPlainObject)
+        .map((p, i) => ({
+          id: typeof p.id === 'string' && p.id ? p.id : 'p' + i + '-' + Date.now(),
+          name: typeof p.name === 'string' ? p.name : '',
+          prefs: typeof p.prefs === 'string' ? p.prefs : '',
+        }));
+    }
+    state.draw = stringMap(raw.draw);
+    state.copied = stringMap(raw.copied) || {};
+    return state;
+  };
+
+  SS.drawMatches = function (state) {
+    if (!state.draw) return false;
+    const names = state.people.map(p => SS.normalizeName(p.name)).sort();
+    const keys = Object.keys(state.draw).sort();
+    return names.length === keys.length && names.every((n, i) => n === keys[i]);
+  };
+
+  SS.linkFor = function (state, giver) {
+    const g = SS.normalizeName(giver);
+    const r = state.draw[g];
+    const person = state.people.find(p => SS.normalizeName(p.name) === r);
+    const payload = { g: g, r: r, p: person ? person.prefs.trim() : '', b: state.budget.trim() };
+    return SS.buildLink(state.baseUrl, SS.encodePayload(payload));
+  };
+
   window.SS = SS;
 })();
