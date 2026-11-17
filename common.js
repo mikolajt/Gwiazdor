@@ -110,8 +110,17 @@
 
   // ---- links and admin state -----------------------------------------------
 
+  // Links always point at the folder, so a pasted ".../admin.html" still works.
   SS.buildLink = function (baseUrl, encoded) {
-    return String(baseUrl).split('#')[0].split('?')[0] + '#' + encoded;
+    const base = String(baseUrl).split('#')[0].split('?')[0].replace(/[^/]*\.html?$/i, '');
+    return base + '#' + encoded;
+  };
+
+  // Only the leading run of URL-safe characters is the code; anything a
+  // messaging app or a sentence glued on after it is ignored.
+  SS.payloadFromHash = function (hash) {
+    const m = String(hash).match(/^#?([A-Za-z0-9_-]+)/);
+    return m ? m[1] : '';
   };
 
   SS.defaultBaseUrl = function (href) {

@@ -19,7 +19,10 @@ Nazwa repozytorium pojawi się w każdym linku, więc warto wybrać coś sympaty
 1. Otwórz panel: `https://<twoja-nazwa>.github.io/<nazwa-repozytorium>/admin.html`.
 2. Wpisz budżet i dodaj uczestników (imię + opcjonalna lista życzeń). Potrzeba co najmniej 3 osób o różnych imionach.
 3. Kliknij **Losuj**.
-4. Przy każdej osobie kliknij **Kopiuj link** i wyślij go **tylko tej osobie** (Messenger, SMS, e-mail…).
+4. Kliknij **Eksportuj** i zachowaj plik z kopią zapasową (patrz niżej, dlaczego).
+5. Przy każdej osobie kliknij **Kopiuj link** i wyślij go **tylko tej osobie** (Messenger, SMS, e-mail…).
+
+Wskazówka: zanim roześlesz linki, wyślij jeden sobie i sprawdź, czy otwiera się poprawnie w Twoim komunikatorze.
 
 Imiona są zawsze pokazywane dokładnie tak, jak je wpiszesz.
 
@@ -31,8 +34,9 @@ Imiona są zawsze pokazywane dokładnie tak, jak je wpiszesz.
 
 ### Gdzie są zapisane dane?
 
-Tylko w Twojej przeglądarce (na tym komputerze). Panel jest publicznie dostępny, ale każdy, kto go otworzy, zobaczy pusty formularz.
-Żeby przenieść dane na inny komputer albo zrobić kopię zapasową, użyj **Eksportuj** / **Importuj**.
+Tylko w Twojej przeglądarce (na tym urządzeniu). Panel jest publicznie dostępny, ale każdy, kto go otworzy, zobaczy pusty formularz.
+
+Przeglądarka może te dane usunąć — np. przy czyszczeniu historii, a Safari na iPhonie potrafi je skasować po kilku dniach nieodwiedzania strony. Bez nich nie da się wygenerować ponownie zgubionego linku ani zaktualizować listy życzeń — zostaje tylko nowe losowanie. Dlatego **po losowaniu zawsze kliknij Eksportuj** i zachowaj plik. **Importuj** przywraca wszystko (także na innym komputerze).
 
 ### Uczciwość
 

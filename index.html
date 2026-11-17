@@ -140,7 +140,7 @@
   window.addEventListener('hashchange', function () { location.reload(); });
 
   (function () {
-    var data = SS.decodePayload(location.hash.slice(1));
+    var data = SS.decodePayload(SS.payloadFromHash(location.hash));
     if (!data) {
       document.getElementById('error').hidden = false;
       return;

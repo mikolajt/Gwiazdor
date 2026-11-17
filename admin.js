@@ -3,6 +3,7 @@
   'use strict';
 
   const STORAGE_KEY = 'gwiazdor.v1';
+  const REDRAW_QUESTION = 'Wszyscy dostaną nowe osoby i trzeba będzie wysłać wszystkie linki od nowa. Losować ponownie?';
   const $ = id => document.getElementById(id);
 
   let state;
@@ -94,9 +95,15 @@
     box.textContent = '';
 
     if (!SS.drawMatches(state)) {
-      if (state.draw) box.appendChild(el('div', 'notice', 'Lista osób się zmieniła — wylosuj ponownie.'));
+      if (state.draw) {
+        box.appendChild(el('div', 'notice',
+          'Lista osób się zmieniła — wylosuj ponownie. Jeśli to pomyłka, przywróć poprzednie imię, a dotychczasowe losowanie wróci.'));
+      }
       const ok = currentErrors().length === 0;
-      const b = button('Losuj', 'primary', () => doDraw());
+      const b = button('Losuj', 'primary', () => {
+        if (state.draw && !confirm(REDRAW_QUESTION)) return;
+        doDraw();
+      });
       b.disabled = !ok;
       box.appendChild(b);
       if (!ok) box.appendChild(el('p', 'hint', 'Najpierw uzupełnij listę uczestników (co najmniej 3 osoby, każda z innym imieniem).'));
@@ -133,9 +140,11 @@
 
     const actions = el('div', 'actions');
     actions.appendChild(button('Losuj ponownie', '', () => {
-      if (confirm('Wszyscy dostaną nowe osoby i trzeba będzie wysłać wszystkie linki od nowa. Losować ponownie?')) doDraw();
+      if (confirm(REDRAW_QUESTION)) doDraw();
     }));
     box.appendChild(actions);
+    box.appendChild(el('p', 'hint',
+      'Losowanie jest zapisane tylko w tej przeglądarce. Zrób kopię zapasową przyciskiem „Eksportuj” na dole strony.'));
   }
 
   function rowFor(giver) {

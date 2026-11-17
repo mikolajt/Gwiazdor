@@ -114,6 +114,24 @@ test('linkFor carries recipient prefs and trimmed budget', () => {
   eq(SS.decodePayload(link.split('#')[1]), { g: 'Ola', r: 'Anna', p: 'kawa', b: '100 zł' });
 });
 
+// --- Final review fixes -----------------------------------------------------
+test('payloadFromHash ignores junk after the code', () => {
+  eq(SS.payloadFromHash('#abc_-9!'), 'abc_-9');
+  eq(SS.payloadFromHash('#abc&fbclid=x'), 'abc');
+  eq(SS.payloadFromHash('#abc.'), 'abc');
+  eq(SS.payloadFromHash(''), '');
+  eq(SS.payloadFromHash('#'), '');
+});
+test('link with trailing punctuation still decodes', () => {
+  const enc = SS.encodePayload({ g: 'Anna', r: 'Tomek', p: 'kawa', b: '' });
+  eq(SS.decodePayload(SS.payloadFromHash('#' + enc + '!')).r, 'Tomek');
+});
+test('buildLink drops a page name from the site address', () => {
+  eq(SS.buildLink('https://u.github.io/repo/admin.html', 'X'), 'https://u.github.io/repo/#X');
+  eq(SS.buildLink('https://u.github.io/repo/index.html?a=1', 'X'), 'https://u.github.io/repo/#X');
+  eq(SS.buildLink('https://u.github.io/repo/', 'X'), 'https://u.github.io/repo/#X');
+});
+
 // --- runner ---------------------------------------------------------------
 (function run() {
   const list = document.getElementById('results');
