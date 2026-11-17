@@ -7,6 +7,7 @@
   const $ = id => document.getElementById(id);
 
   let state;
+  let showPairs = false; // recipients stay hidden until the organiser asks
 
   // ---- storage --------------------------------------------------------------
 
@@ -113,6 +114,13 @@
     const noBase = !state.baseUrl;
     if (noBase) box.appendChild(el('div', 'notice', 'Uzupełnij „Adres strony” w ustawieniach.'));
 
+    const toggle = button(showPairs ? '🙈 Ukryj pary' : '👀 Pokaż, kto kogo wylosował', 'small reveal-toggle', () => {
+      showPairs = !showPairs;
+      renderDraw();
+    });
+    toggle.setAttribute('aria-pressed', String(showPairs));
+    box.appendChild(toggle);
+
     const list = el('div', 'pairs');
     state.people.forEach(p => {
       const giver = SS.normalizeName(p.name);
@@ -121,7 +129,8 @@
       row.dataset.giver = giver;
 
       const who = el('span', 'who');
-      who.append(giver, el('span', 'arrow', '→'), state.draw[giver]);
+      who.append(giver, el('span', 'arrow', '→'),
+        showPairs ? state.draw[giver] : el('span', 'secret', '🎁 ukryte'));
       row.appendChild(who);
 
       const copied = state.copied[giver];
@@ -154,6 +163,7 @@
   function doDraw() {
     state.draw = SS.draw(state.people.map(p => p.name));
     state.copied = {};
+    showPairs = false;
     save();
     renderDraw();
   }
