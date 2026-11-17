@@ -6,7 +6,6 @@
   const $ = id => document.getElementById(id);
 
   let state;
-  let triedDraw = false;
 
   // ---- storage --------------------------------------------------------------
 
@@ -68,7 +67,7 @@
   function renderErrors() {
     const ul = $('errors');
     ul.textContent = '';
-    if (state.people.length < 2 && !triedDraw) return;
+    if (state.people.length < 2) return;
     currentErrors().forEach(msg => {
       const li = document.createElement('li');
       li.textContent = msg;
@@ -76,8 +75,109 @@
     });
   }
 
+  function el(tag, className, text) {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function button(text, className, onClick) {
+    const b = el('button', className, text);
+    b.type = 'button';
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
   function renderDraw() {
-    // Filled in by the draw section (Task 6).
+    const box = $('draw');
+    box.textContent = '';
+
+    if (!SS.drawMatches(state)) {
+      if (state.draw) box.appendChild(el('div', 'notice', 'Lista osób się zmieniła — wylosuj ponownie.'));
+      const ok = currentErrors().length === 0;
+      const b = button('Losuj', 'primary', () => doDraw());
+      b.disabled = !ok;
+      box.appendChild(b);
+      if (!ok) box.appendChild(el('p', 'hint', 'Najpierw uzupełnij listę uczestników (co najmniej 3 osoby, każda z innym imieniem).'));
+      return;
+    }
+
+    const noBase = !state.baseUrl;
+    if (noBase) box.appendChild(el('div', 'notice', 'Uzupełnij „Adres strony” w ustawieniach.'));
+
+    const list = el('div', 'pairs');
+    state.people.forEach(p => {
+      const giver = SS.normalizeName(p.name);
+      const link = noBase ? '' : SS.linkFor(state, giver);
+      const row = el('div', 'pair');
+      row.dataset.giver = giver;
+
+      const who = el('span', 'who');
+      who.append(giver, el('span', 'arrow', '→'), state.draw[giver]);
+      row.appendChild(who);
+
+      const copied = state.copied[giver];
+      if (copied && link && copied === link) row.appendChild(el('span', 'badge copied', 'skopiowany ✓'));
+      else if (copied && link) row.appendChild(el('span', 'badge changed', 'zmieniony — wyślij ponownie'));
+
+      const copyBtn = button('Kopiuj link', 'small copy', () => copyLink(giver, link));
+      const openBtn = button('Otwórz', 'small', () => window.open(link, '_blank', 'noopener'));
+      copyBtn.disabled = openBtn.disabled = noBase;
+      const btns = el('span', 'btns');
+      btns.append(copyBtn, openBtn);
+      row.appendChild(btns);
+      list.appendChild(row);
+    });
+    box.appendChild(list);
+
+    const actions = el('div', 'actions');
+    actions.appendChild(button('Losuj ponownie', '', () => {
+      if (confirm('Wszyscy dostaną nowe osoby i trzeba będzie wysłać wszystkie linki od nowa. Losować ponownie?')) doDraw();
+    }));
+    box.appendChild(actions);
+  }
+
+  function rowFor(giver) {
+    return [...document.querySelectorAll('#draw .pair')].find(r => r.dataset.giver === giver);
+  }
+
+  function doDraw() {
+    state.draw = SS.draw(state.people.map(p => p.name));
+    state.copied = {};
+    save();
+    renderDraw();
+  }
+
+  function markCopied(giver, link) {
+    state.copied[giver] = link;
+    save();
+    renderDraw();
+  }
+
+  function copyLink(giver, link) {
+    const fallback = () => {
+      markCopied(giver, link);
+      const row = rowFor(giver);
+      if (!row) return;
+      const input = el('input', 'manual');
+      input.type = 'text';
+      input.readOnly = true;
+      input.value = link;
+      input.setAttribute('aria-label', 'Link dla ' + giver);
+      row.appendChild(input);
+      input.focus();
+      input.select();
+    };
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return fallback();
+    navigator.clipboard.writeText(link).then(() => {
+      markCopied(giver, link);
+      const btn = rowFor(giver) && rowFor(giver).querySelector('.copy');
+      if (btn) {
+        btn.textContent = 'Skopiowano!';
+        setTimeout(() => { btn.textContent = 'Kopiuj link'; }, 1500);
+      }
+    }, fallback);
   }
 
   function render() {
@@ -123,6 +223,45 @@
     save();
     render();
     $('name-' + p.id).focus();
+  });
+
+  $('export').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const a = el('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'gwiazdor-kopia.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  $('import').addEventListener('click', () => $('importFile').click());
+
+  $('importFile').addEventListener('change', e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    file.text().then(text => {
+      const parsed = SS.parseState(text);
+      if (text.trim() && JSON.stringify(parsed) === JSON.stringify(SS.defaultState())) {
+        alert('Ten plik nie wygląda na kopię z panelu Gwiazdora.');
+        return;
+      }
+      if (!parsed.baseUrl) parsed.baseUrl = state.baseUrl;
+      state = parsed;
+      save();
+      render();
+    });
+  });
+
+  $('clearAll').addEventListener('click', () => {
+    if (!confirm('Usunąć wszystkie osoby i losowanie?')) return;
+    const baseUrl = state.baseUrl;
+    state = SS.defaultState();
+    state.baseUrl = baseUrl;
+    save();
+    render();
   });
 
   // ---- start ----------------------------------------------------------------
